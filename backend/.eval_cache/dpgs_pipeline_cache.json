@@ -1,0 +1,675 @@
+{
+  "https://github.com/Aam-Digital/ndb-core\nEasy-to-use case management software for the social sector that improves the effectiveness and transparency of work with beneficiaries. The offline-first web app is tailored to be used by NGOs anywhere in the world.": {
+    "project_name": "Aam-Digital/ndb-core",
+    "project_url": "https://github.com/Aam-Digital/ndb-core",
+    "sdg_predictions": [
+      {
+        "sdg": "SDG 1: End poverty in all its forms everywhere",
+        "prediction": 0.1,
+        "confidence": 0.1
+      },
+      {
+        "sdg": "SDG 2: End hunger, achieve food security and improved nutrition and promote sustainable agriculture",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 3: Ensure healthy lives and promote well-being for all at all ages",
+        "prediction": 0.8,
+        "confidence": 0.8
+      },
+      {
+        "sdg": "SDG 4: Ensure inclusive and equitable quality education and promote lifelong learning opportunities for all",
+        "prediction": 0.7,
+        "confidence": 0.7
+      },
+      {
+        "sdg": "SDG 5: Achieve gender equality and empower all women and girls",
+        "prediction": 0.6,
+        "confidence": 0.6
+      },
+      {
+        "sdg": "SDG 6: Ensure availability and sustainable management of water and sanitation for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 7: Ensure access to affordable, reliable, sustainable and modern energy for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 8: Promote sustained, inclusive and sustainable economic growth, full and productive employment and decent work for all",
+        "prediction": 0.5,
+        "confidence": 0.5
+      },
+      {
+        "sdg": "SDG 9: Build resilient infrastructure, promote inclusive and sustainable industrialization and foster innovation",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 10: Reduce inequality within and among countries",
+        "prediction": 0.4,
+        "confidence": 0.4
+      },
+      {
+        "sdg": "SDG 11: Make cities and human settlements inclusive, safe, resilient and sustainable",
+        "prediction": 0.3,
+        "confidence": 0.3
+      },
+      {
+        "sdg": "SDG 12: Ensure sustainable consumption and production patterns",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 13: Take urgent action to combat climate change and its impacts",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 14: Conserve and sustainably use the oceans, seas and marine resources for sustainable development",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 15: Protect, restore and promote sustainable use of terrestrial ecosystems, sustainably manage forests, combat desertification, and halt and reverse land degradation and halt biodiversity loss",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 16: Promote peaceful and inclusive societies for sustainable development, provide access to justice for all and build effective, accountable and inclusive institutions at all levels",
+        "prediction": 0.6,
+        "confidence": 0.6
+      },
+      {
+        "sdg": "SDG 17: Strengthen the means of implementation and revitalize the Global Partnership for Sustainable Development",
+        "prediction": 0.7,
+        "confidence": 0.7
+      }
+    ],
+    "groq_predictions": [
+      {
+        "sdg": "SDG 1: End poverty in all its forms everywhere",
+        "prediction": 0.1,
+        "confidence": 0.1
+      },
+      {
+        "sdg": "SDG 2: End hunger, achieve food security and improved nutrition and promote sustainable agriculture",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 3: Ensure healthy lives and promote well-being for all at all ages",
+        "prediction": 0.8,
+        "confidence": 0.8
+      },
+      {
+        "sdg": "SDG 4: Ensure inclusive and equitable quality education and promote lifelong learning opportunities for all",
+        "prediction": 0.7,
+        "confidence": 0.7
+      },
+      {
+        "sdg": "SDG 5: Achieve gender equality and empower all women and girls",
+        "prediction": 0.6,
+        "confidence": 0.6
+      },
+      {
+        "sdg": "SDG 6: Ensure availability and sustainable management of water and sanitation for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 7: Ensure access to affordable, reliable, sustainable and modern energy for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 8: Promote sustained, inclusive and sustainable economic growth, full and productive employment and decent work for all",
+        "prediction": 0.5,
+        "confidence": 0.5
+      },
+      {
+        "sdg": "SDG 9: Build resilient infrastructure, promote inclusive and sustainable industrialization and foster innovation",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 10: Reduce inequality within and among countries",
+        "prediction": 0.4,
+        "confidence": 0.4
+      },
+      {
+        "sdg": "SDG 11: Make cities and human settlements inclusive, safe, resilient and sustainable",
+        "prediction": 0.3,
+        "confidence": 0.3
+      },
+      {
+        "sdg": "SDG 12: Ensure sustainable consumption and production patterns",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 13: Take urgent action to combat climate change and its impacts",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 14: Conserve and sustainably use the oceans, seas and marine resources for sustainable development",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 15: Protect, restore and promote sustainable use of terrestrial ecosystems, sustainably manage forests, combat desertification, and halt and reverse land degradation and halt biodiversity loss",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 16: Promote peaceful and inclusive societies for sustainable development, provide access to justice for all and build effective, accountable and inclusive institutions at all levels",
+        "prediction": 0.6,
+        "confidence": 0.6
+      },
+      {
+        "sdg": "SDG 17: Strengthen the means of implementation and revitalize the Global Partnership for Sustainable Development",
+        "prediction": 0.7,
+        "confidence": 0.7
+      }
+    ],
+    "aurora_predictions": [
+      {
+        "sdg": "SDG 1: End poverty in all its forms everywhere",
+        "prediction": 0.534,
+        "confidence": 0.534
+      },
+      {
+        "sdg": "SDG 2: End hunger, achieve food security and improved nutrition and promote sustainable agriculture",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 3: Ensure healthy lives and promote well-being for all at all ages",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 4: Ensure inclusive and equitable quality education and promote lifelong learning opportunities for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 5: Achieve gender equality and empower all women and girls",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 6: Ensure availability and sustainable management of water and sanitation for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 7: Ensure access to affordable, reliable, sustainable and modern energy for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 8: Promote sustained, inclusive and sustainable economic growth, full and productive employment and decent work for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 9: Build resilient infrastructure, promote inclusive and sustainable industrialization and foster innovation",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 10: Reduce inequality within and among countries",
+        "prediction": 0.208,
+        "confidence": 0.208
+      },
+      {
+        "sdg": "SDG 11: Make cities and human settlements inclusive, safe, resilient and sustainable",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 12: Ensure sustainable consumption and production patterns",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 13: Take urgent action to combat climate change and its impacts",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 14: Conserve and sustainably use the oceans, seas and marine resources for sustainable development",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 15: Protect, restore and promote sustainable use of terrestrial ecosystems, sustainably manage forests, combat desertification, and halt and reverse land degradation and halt biodiversity loss",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 16: Promote peaceful and inclusive societies for sustainable development, provide access to justice for all and build effective, accountable and inclusive institutions at all levels",
+        "prediction": 0.119,
+        "confidence": 0.119
+      },
+      {
+        "sdg": "SDG 17: Strengthen the means of implementation and revitalize the Global Partnership for Sustainable Development",
+        "prediction": 0.0,
+        "confidence": 0.0
+      }
+    ],
+    "method": "groq",
+    "matched_predictions": [
+      {
+        "sdg": "SDG 3: Ensure healthy lives and promote well-being for all at all ages",
+        "prediction": 0.8,
+        "confidence": 0.8
+      },
+      {
+        "sdg": "SDG 4: Ensure inclusive and equitable quality education and promote lifelong learning opportunities for all",
+        "prediction": 0.7,
+        "confidence": 0.7
+      },
+      {
+        "sdg": "SDG 5: Achieve gender equality and empower all women and girls",
+        "prediction": 0.6,
+        "confidence": 0.6
+      },
+      {
+        "sdg": "SDG 8: Promote sustained, inclusive and sustainable economic growth, full and productive employment and decent work for all",
+        "prediction": 0.5,
+        "confidence": 0.5
+      },
+      {
+        "sdg": "SDG 16: Promote peaceful and inclusive societies for sustainable development, provide access to justice for all and build effective, accountable and inclusive institutions at all levels",
+        "prediction": 0.6,
+        "confidence": 0.6
+      },
+      {
+        "sdg": "SDG 17: Strengthen the means of implementation and revitalize the Global Partnership for Sustainable Development",
+        "prediction": 0.7,
+        "confidence": 0.7
+      }
+    ],
+    "status": "ok",
+    "groq": [
+      0.1,
+      0.0,
+      0.8,
+      0.7,
+      0.6,
+      0.0,
+      0.0,
+      0.5,
+      0.0,
+      0.4,
+      0.3,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.6,
+      0.7
+    ],
+    "aurora": [
+      0.534,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.208,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.119,
+      0.0
+    ],
+    "groq_names": [
+      "SDG 3: Ensure healthy lives and promote well-being for all at all ages",
+      "SDG 4: Ensure inclusive and equitable quality education and promote lifelong learning opportunities for all",
+      "SDG 5: Achieve gender equality and empower all women and girls",
+      "SDG 8: Promote sustained, inclusive and sustainable economic growth, full and productive employment and decent work for all",
+      "SDG 16: Promote peaceful and inclusive societies for sustainable development, provide access to justice for all and build effective, accountable and inclusive institutions at all levels",
+      "SDG 17: Strengthen the means of implementation and revitalize the Global Partnership for Sustainable Development"
+    ],
+    "aurora_names": [
+      "SDG 1: End poverty in all its forms everywhere"
+    ],
+    "error": ""
+  },
+  "https://github.com/qlt2020/doskaz\nIt is a model of an online map with information on accessibility of public facilities that enables people with limited mobility to navigate the public space.": {
+    "project_name": "qlt2020/doskaz",
+    "project_url": "https://github.com/qlt2020/doskaz",
+    "sdg_predictions": [
+      {
+        "sdg": "SDG 1: End poverty in all its forms everywhere",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 2: End hunger, achieve food security and improved nutrition and promote sustainable agriculture",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 3: Ensure healthy lives and promote well-being for all at all ages",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 4: Ensure inclusive and equitable quality education and promote lifelong learning opportunities for all",
+        "prediction": 0.1,
+        "confidence": 0.1
+      },
+      {
+        "sdg": "SDG 5: Achieve gender equality and empower all women and girls",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 6: Ensure availability and sustainable management of water and sanitation for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 7: Ensure access to affordable, reliable, sustainable and modern energy for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 8: Promote sustained, inclusive and sustainable economic growth, full and productive employment and decent work for all",
+        "prediction": 0.3,
+        "confidence": 0.3
+      },
+      {
+        "sdg": "SDG 9: Build resilient infrastructure, promote inclusive and sustainable industrialization and foster innovation",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 10: Reduce inequality within and among countries",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 11: Make cities and human settlements inclusive, safe, resilient and sustainable",
+        "prediction": 0.8,
+        "confidence": 0.8
+      },
+      {
+        "sdg": "SDG 12: Ensure sustainable consumption and production patterns",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 13: Take urgent action to combat climate change and its impacts",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 14: Conserve and sustainably use the oceans, seas and marine resources for sustainable development",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 15: Protect, restore and promote sustainable use of terrestrial ecosystems, sustainably manage forests, combat desertification, and halt and reverse land degradation and halt biodiversity loss",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 16: Promote peaceful and inclusive societies for sustainable development, provide access to justice for all and build effective, accountable and inclusive institutions at all levels",
+        "prediction": 0.1,
+        "confidence": 0.1
+      },
+      {
+        "sdg": "SDG 17: Strengthen the means of implementation and revitalize the Global Partnership for Sustainable Development",
+        "prediction": 0.0,
+        "confidence": 0.0
+      }
+    ],
+    "groq_predictions": [
+      {
+        "sdg": "SDG 1: End poverty in all its forms everywhere",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 2: End hunger, achieve food security and improved nutrition and promote sustainable agriculture",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 3: Ensure healthy lives and promote well-being for all at all ages",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 4: Ensure inclusive and equitable quality education and promote lifelong learning opportunities for all",
+        "prediction": 0.1,
+        "confidence": 0.1
+      },
+      {
+        "sdg": "SDG 5: Achieve gender equality and empower all women and girls",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 6: Ensure availability and sustainable management of water and sanitation for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 7: Ensure access to affordable, reliable, sustainable and modern energy for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 8: Promote sustained, inclusive and sustainable economic growth, full and productive employment and decent work for all",
+        "prediction": 0.3,
+        "confidence": 0.3
+      },
+      {
+        "sdg": "SDG 9: Build resilient infrastructure, promote inclusive and sustainable industrialization and foster innovation",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 10: Reduce inequality within and among countries",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 11: Make cities and human settlements inclusive, safe, resilient and sustainable",
+        "prediction": 0.8,
+        "confidence": 0.8
+      },
+      {
+        "sdg": "SDG 12: Ensure sustainable consumption and production patterns",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 13: Take urgent action to combat climate change and its impacts",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 14: Conserve and sustainably use the oceans, seas and marine resources for sustainable development",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 15: Protect, restore and promote sustainable use of terrestrial ecosystems, sustainably manage forests, combat desertification, and halt and reverse land degradation and halt biodiversity loss",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 16: Promote peaceful and inclusive societies for sustainable development, provide access to justice for all and build effective, accountable and inclusive institutions at all levels",
+        "prediction": 0.1,
+        "confidence": 0.1
+      },
+      {
+        "sdg": "SDG 17: Strengthen the means of implementation and revitalize the Global Partnership for Sustainable Development",
+        "prediction": 0.0,
+        "confidence": 0.0
+      }
+    ],
+    "aurora_predictions": [
+      {
+        "sdg": "SDG 1: End poverty in all its forms everywhere",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 2: End hunger, achieve food security and improved nutrition and promote sustainable agriculture",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 3: Ensure healthy lives and promote well-being for all at all ages",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 4: Ensure inclusive and equitable quality education and promote lifelong learning opportunities for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 5: Achieve gender equality and empower all women and girls",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 6: Ensure availability and sustainable management of water and sanitation for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 7: Ensure access to affordable, reliable, sustainable and modern energy for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 8: Promote sustained, inclusive and sustainable economic growth, full and productive employment and decent work for all",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 9: Build resilient infrastructure, promote inclusive and sustainable industrialization and foster innovation",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 10: Reduce inequality within and among countries",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 11: Make cities and human settlements inclusive, safe, resilient and sustainable",
+        "prediction": 0.744,
+        "confidence": 0.744
+      },
+      {
+        "sdg": "SDG 12: Ensure sustainable consumption and production patterns",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 13: Take urgent action to combat climate change and its impacts",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 14: Conserve and sustainably use the oceans, seas and marine resources for sustainable development",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 15: Protect, restore and promote sustainable use of terrestrial ecosystems, sustainably manage forests, combat desertification, and halt and reverse land degradation and halt biodiversity loss",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 16: Promote peaceful and inclusive societies for sustainable development, provide access to justice for all and build effective, accountable and inclusive institutions at all levels",
+        "prediction": 0.0,
+        "confidence": 0.0
+      },
+      {
+        "sdg": "SDG 17: Strengthen the means of implementation and revitalize the Global Partnership for Sustainable Development",
+        "prediction": 0.0,
+        "confidence": 0.0
+      }
+    ],
+    "method": "groq",
+    "matched_predictions": [
+      {
+        "sdg": "SDG 8: Promote sustained, inclusive and sustainable economic growth, full and productive employment and decent work for all",
+        "prediction": 0.3,
+        "confidence": 0.3
+      },
+      {
+        "sdg": "SDG 11: Make cities and human settlements inclusive, safe, resilient and sustainable",
+        "prediction": 0.8,
+        "confidence": 0.8
+      }
+    ],
+    "status": "ok",
+    "groq": [
+      0.0,
+      0.0,
+      0.0,
+      0.1,
+      0.0,
+      0.0,
+      0.0,
+      0.3,
+      0.0,
+      0.0,
+      0.8,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.1,
+      0.0
+    ],
+    "aurora": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.744,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "groq_names": [
+      "SDG 11: Make cities and human settlements inclusive, safe, resilient and sustainable"
+    ],
+    "aurora_names": [
+      "SDG 11: Make cities and human settlements inclusive, safe, resilient and sustainable"
+    ],
+    "error": ""
+  }
+}

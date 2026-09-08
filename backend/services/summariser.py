@@ -24,6 +24,7 @@ import os
 from dotenv import load_dotenv
 
 from services.text_cleaner import clean_text
+from services.request_limiter import wait_for_request
 
 
 load_dotenv()
@@ -206,7 +207,8 @@ def summarize_for_sdg(
         payload = {
             "model":       GROQ_MODEL,
             "temperature": temperature,
-            "max_tokens":  600,
+            "max_tokens":  900,
+            "reasoning_effort": "low",
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user",   "content": user_message},
@@ -216,6 +218,7 @@ def summarize_for_sdg(
         if _supports_enable_thinking(GROQ_MODEL):
             payload["chat_template_kwargs"] = {"enable_thinking": False}
 
+        wait_for_request()
         response = requests.post(
             GROQ_API_URL,
             headers={

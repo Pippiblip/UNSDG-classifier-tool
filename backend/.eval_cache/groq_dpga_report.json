@@ -1,0 +1,36 @@
+{
+  "classifier": "Groq JSON classifier",
+  "model": "openai/gpt-oss-20b",
+  "projects": 2,
+  "threshold": 0.5,
+  "micro": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 8,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0
+  },
+  "rows": [
+    {
+      "name": "Aam Digital",
+      "predicted": [],
+      "truth": [
+        "1",
+        "10",
+        "16",
+        "3",
+        "4",
+        "5",
+        "8"
+      ]
+    },
+    {
+      "name": "Accessible Kazakhstan",
+      "predicted": [],
+      "truth": [
+        "11"
+      ]
+    }
+  ]
+}

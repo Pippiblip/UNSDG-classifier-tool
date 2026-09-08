@@ -85,13 +85,9 @@ Integration-style tests using Flask's test client (no live server needed):
 - No `/api/classify_st_description` route exists, and no frontend code calls it anymore (see [gap above](#known-gap-this-inventory-surfaced-resolved)) — nothing to test here unless the route is intentionally reintroduced later.
 - CORS headers are present on responses.
 
-## 7. `models/` (GE-Lab microservice)
+## 7. Groq classifier
 
-The hardest area to unit test conventionally: `classifier.py` and `models/app.py` load real weights from the Hugging Face Hub and build tensors at import time, and the score-formatting logic in the `/predict` and `/similarities` routes is currently inline with the tensor math rather than separated out.
-
-Recommended approach:
-- **Refactor first**: extract the score→JSON formatting (rounding, threshold filtering in `/predict`, min-max normalization in `/similarities`) into small pure functions so they're unit-testable without a loaded model.
-- **Smoke/integration test** for the model itself: start the service, `POST` a fixed known text, assert the response shape and that every score is in `[0, 1]`. Mark this slow/optional in CI — it needs to download model weights and doesn't need to run on every commit.
+`backend/tests/test_groq_classifier.py` covers Groq JSON parsing, score clamping, API request options, API-key errors, and the existing response contract. `backend/tests/eval_groq_dpga.py` evaluates the live classifier against `dpgs.csv.xlsx`; it requires `GROQ_API_KEY` and is intentionally excluded from pytest.
 
 ## 8. Frontend
 
@@ -123,4 +119,4 @@ Requires installing Jest or Vitest + React Testing Library first.
 3. `backend/services/summariser.py` and `backend/aurora_api.py` — both are mockable HTTP-boundary modules with well-defined fallback paths, still untested.
 4. `backend/app.py` route tests (the `classify_st_description` gap is already resolved, so this is unblocked).
 5. Frontend pure-logic tests, then component tests.
-6. `models/` — after extracting the pure formatting logic out of the model-loading routes.
+6. `backend/tests/eval_groq_dpga.py` — run the live DPGA evaluation when credentials and network access are available.

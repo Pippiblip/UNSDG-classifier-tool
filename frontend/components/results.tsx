@@ -81,7 +81,7 @@ const Results = ({ results, setResults, setError }: ResultsProps) => {
 
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("aurora");
+  const [activeTab, setActiveTab] = useState<string>("st-url");
   const [isLoadingTab, setIsLoadingTab] = useState(false);
   const [loadingPhraseIndex, setLoadingPhraseIndex] = useState(0);
 
@@ -394,8 +394,8 @@ const Results = ({ results, setResults, setError }: ResultsProps) => {
                       <span className="relative group inline-block">
                         <IoIosInformationCircleOutline className="ml-2 text-purple-600 cursor-help" />
                         <span className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 px-3 py-2 text-xs text-white bg-gray-800 rounded-lg shadow-lg z-10 whitespace-normal">
-                          This is a sentence transformer modal from Huggingface
-                          that analyzes the github repository URL and all its metadata.
+                          This uses Groq classification on a summary of the repository
+                          and the project description.
                           <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
                         </span>
                       </span>

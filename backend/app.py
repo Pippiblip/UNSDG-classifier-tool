@@ -2,7 +2,7 @@ import os
 import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from embedding_url import main as classify_url
+from embedding_url import GroqClassificationError, main as classify_url
 from aurora_api import main as aurora_classify
 from dotenv import load_dotenv
 from services.recommendation_pipeline import assess_relevance
@@ -85,7 +85,10 @@ def classify_aurora():
 
     sdg_preds = aurora_result.get("sdg_predictions", {})
     preds = (
-        [{"sdg": name, "prediction": score} for name, score in sdg_preds.items()]
+        [
+            {"sdg": name, "prediction": score, "confidence": score}
+            for name, score in sdg_preds.items()
+        ]
         if isinstance(sdg_preds, dict)
         else sdg_preds
     )
@@ -119,7 +122,7 @@ def classify_st_url():
     if not projectDescription:
         return jsonify({'error': 'Project description is required'}), 400
 
-    print("\n===== RUNNING SENTENCE TRANSFORMER URL MODEL =====")
+    print("\n===== RUNNING GROQ URL CLASSIFIER =====")
 
     if not projectUrl:
         return jsonify({
@@ -134,7 +137,7 @@ def classify_st_url():
             url                 = projectUrl,
             project_description = projectDescription,
         )
-        print("ST URL model completed successfully")
+        print("Groq URL classifier completed successfully")
 
     # ── 400 — bad input from the user ────────────────────────────────────────
     # These all mean the URL is wrong in some way the user can fix themselves.
@@ -172,12 +175,20 @@ def classify_st_url():
                        "Ensure the repository is public and the URL is correct.",
         }), 502
 
-    # ── 500 — anything else (model failure, microservice down, etc.) ──────────
+    # ── 502 — Groq classification service failure ────────────────────────────
+    except GroqClassificationError as e:
+        print(f"Groq classifier error: {e}")
+        return jsonify({
+            "error": str(e),
+            "message": "Groq classification service failed.",
+        }), 502
+
+    # ── 500 — anything else ──────────────────────────────────────────────────
     except Exception as e:
         print(f"ST URL model unexpected error: {e}")
         return jsonify({
             "error":   str(e),
-            "message": "Sentence Transformer URL model classification failed.",
+            "message": "Groq URL classification failed.",
         }), 500
 
     # ── Recommendation pipeline: assess why no SDGs were returned ──────────
@@ -186,21 +197,39 @@ def classify_st_url():
         st_url_result.get("meta", {}).get("description", "") or "",
     )
 
-    preds = [
-        {"sdg": name, "prediction": score}
-        for name, score in st_url_result.get("sdg_predictions", {}).items()
-    ]
+    raw_predictions = st_url_result.get("sdg_predictions", [])
+    if isinstance(raw_predictions, dict):
+        preds = [
+            {"sdg": name, "prediction": score, "confidence": score}
+            for name, score in raw_predictions.items()
+        ]
+    else:
+        preds = [
+            {
+                "sdg": item.get("sdg", ""),
+                "prediction": item.get("prediction", item.get("confidence", 0)),
+                "confidence": item.get("confidence", item.get("prediction", 0)),
+            }
+            for item in raw_predictions
+            if isinstance(item, dict)
+        ]
     filtered = [p for p in preds if _st_pred_passes(p)]
-
+    displayed = filtered or sorted(
+        preds,
+        key=lambda item: item.get("prediction", 0),
+        reverse=True,
+    )[:3]
     response = {
         "projectName": projectName,
         "projectUrl":  projectUrl,
-        "predictions": filtered,
+        "predictions": displayed,
+        "allPredictions": preds,
+        "method": st_url_result.get("method", "groq"),
         "recommendation": {
             "reason": rec["reason"],
             "suggestions": rec["suggestions"],
             "text_quality": rec["text_quality"],
-        } if not filtered else None,
+        } if not displayed else None,
     }
 
     return jsonify(response), 200

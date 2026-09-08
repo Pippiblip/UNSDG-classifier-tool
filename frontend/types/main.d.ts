@@ -1,5 +1,6 @@
 export type SDGValue = {
   prediction: number;
+  confidence?: number;
   sdg?:
     | string
     | {
@@ -29,6 +30,10 @@ export type ResultsData = {
     | Record<string, number>
     | SDGPrediction[]
     | { sdg: string; prediction: number }[];
+  allPredictions?: SDGPrediction[];
+  groq_predictions?: SDGPrediction[];
+  aurora_predictions?: SDGPrediction[];
+  method?: string;
   [key: string]: unknown;
 };
 
@@ -56,6 +61,7 @@ export interface SDGClassificationRequest {
 export type SDGPrediction = {
   sdg: string;
   prediction: number;
+  confidence?: number;
 };
 
 export interface SDGClassificationResponse {
@@ -63,7 +69,7 @@ export interface SDGClassificationResponse {
   projectName?: string;
   projectUrl?: string;
   repo_url?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type SDGCardProps = {

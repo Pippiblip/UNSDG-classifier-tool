@@ -20,7 +20,7 @@ running Flask route filter:
 |---|---|---|
 | `TestSdgNumberFromName` | 4 | `sdg_constants.sdg_number_from_name` (label → SDG number parsing) |
 | `TestPerSdgThresholdsMap` | 3 | `sdg_constants.PER_SDG_THRESHOLDS` documented map |
-| `TestPassesThreshold` | 6 | `embedding_url.passes_threshold` gating logic |
+| `test_groq_classifier.py` | 4 | Groq JSON parsing, score normalization, API-key handling, and response contract |
 | `TestClassifyRepoPerSdg` | 3 | `embedding_url.classify_repo` applying the gates |
 | `TestMainWiresPerSdgThresholds` | 1 | `main()` wiring the map into `classify_repo` |
 | `TestAppStPredFilter` | 3 | `app.py` ST-URL prediction filter (`_st_pred_passes`) |

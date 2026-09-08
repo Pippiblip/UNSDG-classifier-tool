@@ -1,38 +1,57 @@
+"""Repository classification using Groq's JSON chat-completions API.
+
+The public ``main`` function intentionally keeps the response contract used by
+the Flask route. Repository fetching and summarisation stay local to the
+backend; SDG scoring is delegated to Groq instead of loading ML models.
+"""
+
+from __future__ import annotations
+
+import json
 import os
 import re
-import base64
-import requests
+import time
+from typing import Any, Dict
 from urllib.parse import urlparse
-from typing import List, Dict, Tuple
-from transformers import pipeline
-from sentence_transformers import SentenceTransformer
-import numpy as np
-import sdg_constants
-from sdg_constants import SDG_LABELS, SDG_NAMES, SDG_DESCS
-from services.repo_fetcher import get_provider
-from urllib.parse import urlparse
-from services.summariser import summarize_for_sdg
 
-# repo_fetcher may define ProviderError; if not available, fall back to a generic exception.
+import requests
+
+import sdg_constants
+from services.repo_fetcher import get_provider
+from services.summariser import summarize_for_sdg
+from services.request_limiter import wait_for_request
+
 try:
-    from services.repo_fetcher import ProviderError  # type: ignore
+    from services.repo_fetcher import ProviderError
 except Exception:  # pragma: no cover
     ProviderError = Exception
 
-# ── CHANGE 1: added project_description param ────────────────────────────────
-def fetch_repo_text(url: str, project_description: str = "", max_issues: int = 10) -> Dict:
-    # max_issues currently unused; kept for compatibility
+
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = os.getenv("GROQ_CLASSIFIER_MODEL", "openai/gpt-oss-20b")
+DEFAULT_TIMEOUT = 60
+
+
+class GroqClassificationError(RuntimeError):
+    """Raised when Groq cannot return a valid classification response."""
+
+
+class AuroraClassificationError(RuntimeError):
+    """Raised when Aurora cannot return a usable classification response."""
+
+
+def fetch_repo_text(url: str, project_description: str = "", max_issues: int = 10) -> Dict[str, Any]:
     host = urlparse(url).hostname or ""
     token = os.environ.get("GITHUB_TOKEN") if "github.com" in host else None
-
     provider = get_provider(url, token=token)
     meta: Dict[str, str] = {"name": "", "description": "", "homepage": ""}
+
     try:
         fetch_meta = getattr(provider, "fetch_meta", None)
         if callable(fetch_meta):
-            meta_candidate = fetch_meta()
-            if isinstance(meta_candidate, dict):
-                meta = meta_candidate
+            candidate = fetch_meta()
+            if isinstance(candidate, dict):
+                meta = candidate
         else:
             meta = {
                 "name": getattr(provider, "_name", ""),
@@ -42,191 +61,261 @@ def fetch_repo_text(url: str, project_description: str = "", max_issues: int = 1
     except ProviderError:
         pass
 
-    topics: List[str] = []
+    try:
+        topics = provider.fetch_topics() or []
+    except ProviderError:
+        topics = []
 
     try:
-        topics = provider.fetch_topics()    
+        readme = provider.fetch_readme() or ""
     except ProviderError:
-        pass
+        readme = ""
 
-    readme: str = ""
-    try:
-        readme = provider.fetch_readme()
-    except ProviderError:
-        pass
-
-    # These can all be None depending on the platform response:
-    name        = meta.get("name")        or ""
-    # ── CHANGE 2: user's description takes priority over repo's description ──
+    name = meta.get("name") or ""
     description = project_description.strip() or meta.get("description") or ""
-    homepage    = meta.get("homepage")    or ""
-    topics      = topics or []
-    readme      = readme or ""
-
-    extracted_summary = summarize_for_sdg(
+    summary = summarize_for_sdg(
         readme=readme,
         name=name,
         description=description,
-        topics=topics
+        topics=topics,
     )
-    print(extracted_summary)
+    if not summary.strip() or "LLM summarization unavailable:" in summary:
+        summary = "\n\n".join(
+            part for part in (name, description, readme, "Topics: " + ", ".join(topics))
+            if part.strip()
+        )
     return {
         "owner": provider._owner,
-        "repo":  provider._repo,
-        "text":  extracted_summary,
-        "meta":  {
-            "name":        name,
+        "repo": provider._repo,
+        "text": summary,
+        "meta": {
+            "name": name,
             "description": description,
-            "topics":      topics,
-            "homepage":    homepage,
+            "topics": topics,
+            "homepage": meta.get("homepage") or "",
         },
     }
 
-_embedder = None
+
+CLASSIFIER_SYSTEM_PROMPT = """You classify software projects against the 17 UN Sustainable Development Goals.
+Use only concrete domain signals in the supplied project summary. Generic software
+infrastructure with no named population, problem, or real-world domain should score low.
+Return JSON only, with this exact shape:
+{"scores": {"1": 0.0, "2": 0.0, ..., "17": 0.0}}
+The scores object must contain every SDG number from 1 through 17 exactly once. Each score is a
+number from 0.0 to 1.0: 0 means no evidence and 1 means strong, explicit evidence.
+These are relevance scores, not claims that the project achieves an SDG."""
 
 
-def get_embedder():
-    global _embedder
-    if _embedder is None:
-        _embedder = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
-    return _embedder
+def _classifier_prompt(text: str) -> str:
+    labels = "\n".join(
+        f"{index + 1}. {name}: {description}"
+        for index, (name, description) in enumerate(
+            zip(sdg_constants.SDG_NAMES, sdg_constants.SDG_DESCS)
+        )
+    )
+    return f"SDG definitions:\n{labels}\n\nProject summary:\n{text[:12000]}"
 
 
-def zero_shot_scores(text: str, labels: List[str]) -> Tuple[np.ndarray, Dict]:
+def _json_content(data: Any) -> Dict[str, Any]:
+    choices = data.get("choices") if isinstance(data, dict) else None
+    if not choices:
+        raise GroqClassificationError("Groq response contained no choices")
+    content = choices[0].get("message", {}).get("content", "")
+    if not isinstance(content, str) or not content.strip():
+        raise GroqClassificationError("Groq response contained no JSON content")
+    content = re.sub(r"^```(?:json)?\s*|\s*```$", "", content.strip(), flags=re.IGNORECASE)
+    try:
+        parsed = json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise GroqClassificationError("Groq returned invalid classification JSON") from exc
+    if not isinstance(parsed, dict):
+        raise GroqClassificationError("Groq classification JSON must be an object")
+    return parsed
 
-    """
-    Now calls GE-Lab microservice.
-    """
 
-    ge_lab_url = "http://localhost:9010/predict" 
+def _score(value: Any) -> float:
+    try:
+        return max(0.0, min(1.0, float(value)))
+    except (TypeError, ValueError):
+        return 0.0
 
-    
-    response = requests.post(ge_lab_url, json={"text": text}, timeout=1500)
-    response.raise_for_status()
 
-    # GET SCORE FROM THE GE-LAB MODEL
-    payload = response.json()
+def _normalise_scores(payload: Dict[str, Any]) -> Dict[str, float]:
+    raw_scores = payload.get("scores", payload.get("sdg_predictions"))
+    if not isinstance(raw_scores, dict):
+        raise GroqClassificationError("Groq JSON did not contain a scores object")
 
-    
-    scores_obj = payload.get("scores")
-    if scores_obj is None and isinstance(payload.get("data"), dict):
-        scores_obj = payload["data"].get("scores")
+    by_number = {}
+    for key, value in raw_scores.items():
+        match = re.search(r"(?:(?:SDG|Goal)\s*)?(\d+)", str(key), flags=re.IGNORECASE)
+        if match:
+            by_number[match.group(1)] = _score(value)
 
-    if isinstance(scores_obj, dict):
-        ordered_scores = [scores_obj.get(label) for label in sdg_constants.SDG_NAMES]
-        if any(v is None for v in ordered_scores):
-            raise KeyError(
-                "Microservice scores dict missing expected SDG keys. "
-                f"Available keys sample={list(scores_obj.keys())[:5]}"
-            )
-        scores_list = ordered_scores
-    elif isinstance(scores_obj, (list, tuple)):
-        scores_list = list(scores_obj)
-    else:
-        raise TypeError(f"Unexpected microservice scores type={type(scores_obj)} payload_keys={list(payload.keys())}")
-
-    detailed_info = {
-        "labels": labels,  
-        "scores": scores_list,
-        "sequence": text[:500]
+    return {
+        name: by_number.get(str(index), _score(raw_scores.get(name, 0.0)))
+        for index, name in enumerate(sdg_constants.SDG_NAMES, start=1)
     }
 
-    return np.array(scores_list, dtype=float), detailed_info
 
+def classify_text(text: str, *, api_key: str | None = None, timeout: int = DEFAULT_TIMEOUT) -> Dict[str, float]:
+    if not text.strip():
+        raise ValueError("No text available for classification")
+    key = api_key or os.getenv("GROQ_API_KEY")
+    if not key:
+        raise GroqClassificationError("GROQ_API_KEY is not configured")
 
-
-COSINE_LOW  = 0.27 # e.g. 5th percentile of real observed similarities
-COSINE_HIGH = 0.34  # e.g. 95th percentile of real observed similarities
-
-def embedding_similarity_scores(text: str, label_texts: List[str]) -> np.ndarray:
-    emb = get_embedder()
-    v_text = emb.encode([text], normalize_embeddings=True)[0]
-    v_lbls = emb.encode(label_texts, normalize_embeddings=True)
-    sims = np.dot(v_lbls, v_text)
-    sims = np.clip((sims - COSINE_LOW) / (COSINE_HIGH - COSINE_LOW), 0, 1)
-    return sims
-
-def ensemble_scores(zs: np.ndarray, es: np.ndarray, alpha: float = 0.5) -> np.ndarray:
-    """
-    Simple mean ensemble; tune alpha if desired.
-    """
-    return alpha * zs + (1 - alpha) * es
+    payload = {
+        "model": GROQ_MODEL,
+        "temperature": 0,
+        "max_tokens": 768,
+        "reasoning_effort": "low",
+        "response_format": {"type": "json_object"},
+        "messages": [
+            {"role": "system", "content": CLASSIFIER_SYSTEM_PROMPT},
+            {"role": "user", "content": _classifier_prompt(text)},
+        ],
+    }
+    response = None
+    for attempt in range(3):
+        wait_for_request()
+        response = requests.post(
+            GROQ_API_URL,
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=timeout,
+        )
+        if response.status_code != 429 or attempt == 2:
+            break
+        retry_after = response.headers.get("Retry-After", "2")
+        try:
+            delay = min(10.0, max(1.0, float(retry_after)))
+        except ValueError:
+            delay = 2.0
+        time.sleep(delay)
+    try:
+        data = response.json()
+    except ValueError as exc:
+        raise GroqClassificationError("Groq returned a non-JSON HTTP response") from exc
+    if isinstance(data, dict) and data.get("error"):
+        raise GroqClassificationError(f"Groq API error: {data['error']}")
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as exc:
+        raise GroqClassificationError(f"Groq API HTTP error: {exc}") from exc
+    return _normalise_scores(_json_content(data))
 
 
 def passes_threshold(name: str, score: float, threshold: float,
                      per_sdg_thresholds: Dict[str, float] | None = None) -> bool:
-    """
-    Decide whether an SDG prediction passes the gate.
-
-    When ``per_sdg_thresholds`` is provided (keyed by SDG number, e.g.
-    ``sdg_constants.PER_SDG_THRESHOLDS``), the per-SDG value wins — see
-    docs/EVAL_DPGA_150_RESULTS_alpha07_ANALYSIS.md §6, where the alpha-0.7
-    per-SDG F1-optimal thresholds range from 0.17 (SDG 9) to 0.76 (SDG 14).
-    Falls back to the global ``threshold`` for SDGs not in the map (or when no
-    map is given), preserving the historical behavior.
-    """
     if per_sdg_thresholds:
-        sdg_num = sdg_constants.sdg_number_from_name(name)
-        if sdg_num is not None and sdg_num in per_sdg_thresholds:
-            return score >= per_sdg_thresholds[sdg_num]
+        number = sdg_constants.sdg_number_from_name(name)
+        if number is not None and number in per_sdg_thresholds:
+            return score >= per_sdg_thresholds[number]
     return score >= threshold
 
-# ── CHANGE 3: added project_description param, passed to fetch_repo_text ─────
-def classify_repo(url: str, threshold: float = 0.55, top_k: int = 10, use_ensemble: bool = True, proj_desc: str = "", per_sdg_thresholds: Dict[str, float] | None = None):
+
+def classify_repo(url: str, threshold: float = 0.5, top_k: int = 10,
+                  use_ensemble: bool = False, proj_desc: str = "",
+                  per_sdg_thresholds: Dict[str, float] | None = None) -> Dict[str, Any]:
     data = fetch_repo_text(url, project_description=proj_desc)
-    text = data["text"][:6000]
-
-    if not text:
-        raise ValueError("No text extracted from this repository. Add README or description.")
-
-    zs, zs_details = zero_shot_scores(text, sdg_constants.SDG_NAMES)
-
-    label_score_pairs = list(zip(zs_details["labels"], zs_details["scores"]))
-    label_score_pairs.sort(key=lambda x: x[1], reverse=True)
-    
-
-    if use_ensemble:
-        es = embedding_similarity_scores(text, sdg_constants.SDG_DESCS)
-        scores = ensemble_scores(zs, es, alpha=0.7)
-    else:
-        scores = zs
-
-    idx = np.argsort(scores)[::-1]
-    ranked = [(sdg_constants.SDG_NAMES[i], float(scores[i])) for i in idx]
-
+    text = data["text"][:12000]
+    scores = classify_text(text)
+    ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
     selected = [
-        (name, sc) for (name, sc) in ranked
-        if passes_threshold(name, sc, threshold, per_sdg_thresholds)
+        item for item in ranked
+        if passes_threshold(item[0], item[1], threshold, per_sdg_thresholds)
     ]
-
     return {
-        "repo":        f"{data['owner']}/{data['repo']}",  
-        "predictions": selected[:top_k],                  
-        "top_all":     ranked[:top_k],
-        "meta":        data["meta"],                       
+        "repo": f"{data['owner']}/{data['repo']}",
+        "scores": scores,
+        "predictions": selected[:top_k],
+        "top_all": ranked[:top_k],
+        "meta": data["meta"],
     }
 
-# ── CHANGE 4: main() accepts and passes project_description ──────────────────
-def main(url: str, project_description: str = ""):
 
-    result = classify_repo(
-        url,
-        threshold=0.55,
-        use_ensemble=True,
-        proj_desc=project_description,
-        per_sdg_thresholds=sdg_constants.PER_SDG_THRESHOLDS,
+def _aurora_scores(text: str, project_name: str, project_url: str) -> Dict[str, float]:
+    from aurora_api import main as aurora_classify
+
+    result = aurora_classify(
+        text=text,
+        project_name=project_name,
+        project_url=project_url,
     )
+    if result.get("error"):
+        raise AuroraClassificationError(result["error"])
+    raw_predictions = result.get("sdg_predictions", {})
+    if not isinstance(raw_predictions, dict):
+        raise AuroraClassificationError("Aurora returned invalid predictions")
+    scores = {name: 0.0 for name in sdg_constants.SDG_NAMES}
+    for name, value in raw_predictions.items():
+        number = re.search(r"(?:SDG\s*)?(\d+)", str(name), flags=re.IGNORECASE)
+        if not number:
+            continue
+        index = int(number.group(1)) - 1
+        if 0 <= index < len(sdg_constants.SDG_NAMES):
+            scores[sdg_constants.SDG_NAMES[index]] = _score(value)
+    return scores
 
-    predictions = {
-        "project_name": result["repo"],
+
+def main(url: str, project_description: str = "") -> Dict[str, Any]:
+    data = fetch_repo_text(url, project_description=project_description)
+
+    try:
+        groq_scores = classify_text(data["text"][:12000])
+        groq_error = None
+    except GroqClassificationError:
+        groq_scores = None
+        groq_error = "Groq classification failed"
+
+    try:
+        aurora_scores = _aurora_scores(
+            data["text"][:12000],
+            f"{data['owner']}/{data['repo']}",
+            url,
+        )
+        aurora_error = None
+    except AuroraClassificationError:
+        aurora_scores = None
+        aurora_error = "Aurora classification failed"
+
+    if groq_scores is not None:
+        scores = groq_scores
+        method = "groq"
+    elif aurora_scores is not None:
+        scores = aurora_scores
+        method = "aurora-fallback"
+    else:
+        raise GroqClassificationError(
+            f"Both classification services failed: {groq_error}; {aurora_error}"
+        )
+
+    def score_records(score_map: Dict[str, float]) -> list[Dict[str, Any]]:
+        return [
+            {
+                "sdg": name,
+                "prediction": round(_score(score_map.get(name)), 3),
+                "confidence": round(_score(score_map.get(name)), 3),
+            }
+            for name in sdg_constants.SDG_NAMES
+        ]
+
+    all_scores = score_records(scores)
+    aurora_records = score_records(aurora_scores) if aurora_scores is not None else []
+    groq_records = score_records(groq_scores) if groq_scores is not None else []
+    return {
+        "project_name": f"{data['owner']}/{data['repo']}",
         "project_url": url,
-        "sdg_predictions": {
-            name: float(f"{score:.3f}") for (name, score) in result["predictions"]
-        }
+        "sdg_predictions": all_scores,
+        "groq_predictions": groq_records,
+        "aurora_predictions": aurora_records,
+        "method": method,
+        "matched_predictions": [
+            item for item in all_scores
+            if passes_threshold(
+                item["sdg"], item["prediction"], 0.5,
+                sdg_constants.PER_SDG_THRESHOLDS,
+            )
+        ],
     }
-
-    return predictions
-
-if __name__ == "__main__":
-    print("\033[43m GET THE REPO_ANALYSED RESULTS\033[0m")
-    

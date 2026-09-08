@@ -5,12 +5,12 @@ Web app (under the CHAOSS UN-SDG Working Group) that analyzes open source repos 
 ## Architecture — three separate services
 
 - **`frontend/`** — Next.js 15 (App Router) + TypeScript + Tailwind + MUI. Entry: [app/page.tsx](frontend/app/page.tsx). API calls live in `frontend/services/api.ts`. Run: `cd frontend && npm run dev` (localhost:3000). Lint: `npm run lint`.
-- **`backend/`** — Flask API in [backend/app.py](backend/app.py). Routes: `/api/classify_aurora` (Aurora SDG API), `/api/classify_st_url` (sentence-transformer + repo fetch). Run: `cd backend && python app.py`.
+- **`backend/`** — Flask API in [backend/app.py](backend/app.py). Routes: `/api/classify_aurora` (Aurora SDG API), `/api/classify_st_url` (Groq JSON classifier + repo fetch). Run: `cd backend && python app.py`.
   - `backend/services/repo_fetcher.py` — fetches README/topics/meta from GitHub/GitLab/Codeberg/Bitbucket, with a deliberate exception hierarchy (`InvalidURLError`, `UnsupportedHostError`, `RepositoryNotFoundError`, `RateLimitError`, `FetchError`).
   - `backend/services/summariser.py` — Groq LLM summarization with graceful fallback when no API key / on any failure.
-  - `backend/embedding_url.py` — zero-shot + embedding-similarity ensemble scoring against the `models/` microservice.
+  - `backend/embedding_url.py` — repository summarisation and Groq JSON SDG scoring.
   - `backend/aurora_api.py` — client for the external Aurora SDG API.
-- **`models/`** — separate FastAPI microservice (`fastapi`/`uvicorn`/`torch`/`transformers`) serving a LUKE-based multi-label SDG classifier (`models/classifier.py`, `models/config.json`). Loads real weights from Hugging Face Hub at import time.
+- **`models/`** — retired. Classification is now performed through Groq from the Flask backend; no local model weights or inference service are required.
 
 The frontend never talks to `models/` directly — it goes through the Flask backend.
 

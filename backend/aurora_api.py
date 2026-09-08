@@ -1,6 +1,7 @@
 import requests
 import json
 from sdg_constants import SDG_LABELS_DICT as SDG_LABELS
+from services.request_limiter import wait_for_request
 
 def main(text: str, project_name: str = "", project_url: str = ""):
     """
@@ -18,6 +19,7 @@ def main(text: str, project_name: str = "", project_url: str = ""):
         url = "https://aurora-sdg.labs.vu.nl/classifier/classify/elsevier-sdg-multi"
         payload = json.dumps({"text": text})
         headers = {'Content-Type': 'application/json'}
+        wait_for_request()
         response = requests.request("POST", url, headers=headers, data=payload)
         # response.raise_for_status()
         

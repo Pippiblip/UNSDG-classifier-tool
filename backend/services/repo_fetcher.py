@@ -21,6 +21,7 @@ from abc import ABC, abstractmethod
 from urllib.parse import urlparse, quote
 
 import requests
+from services.request_limiter import wait_for_request
 
 
 # ─────────────────────────── custom exceptions ───────────────────────────────
@@ -231,6 +232,7 @@ class BaseRepositoryProvider(ABC):
         """
         kwargs.setdefault("headers", self._base_headers())
         try:
+            wait_for_request()
             r = requests.get(url, timeout=30, **kwargs)
         except requests.exceptions.ConnectionError as exc:
             raise FetchError(
@@ -847,6 +849,7 @@ def _detect_engine(host: str) -> type[BaseRepositoryProvider] | None:
 
     for probe_url, cls in probes:
         try:
+            wait_for_request()
             r = requests.get(
                 probe_url,
                 headers={"User-Agent": "sdg-classifier", "Accept": "application/json"},

@@ -1,9 +1,4 @@
-pipeline
-sentence-transformers
-transformers
 requests
-numpy
-accelerate
 flask
 flask-cors
 Flask-UUID

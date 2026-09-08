@@ -70,7 +70,7 @@ const MainScreen: React.FC<{
       setIsUploading(true);
       setUploadMsg(null);
 
-      const response = await sdgApi.classifyAurora(finalizedData);
+      const response = await sdgApi.classifySTUrl(finalizedData);
 
       if (response && response.repo_url) {
         setUploadMsg("Text Analyzing Successfully!");
