@@ -1,5 +1,4 @@
 import React from "react";
-import { IoIosInformationCircleOutline } from "react-icons/io";
 import { Recommendation } from "@/types/main";
 
 interface NoSdgPageProps {
@@ -40,7 +39,7 @@ const NoSdgPage: React.FC<NoSdgPageProps> = ({ recommendation }) => {
         <li key={i} className="mb-2 flex items-start">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4 flex-shrink-0 text-purple-600 mt-1"
+            className="h-4 w-4 flex-shrink-0 text-[#5B92E5] mt-1"
             viewBox="0 0 24 24"
           >
             <path
@@ -83,7 +82,7 @@ const NoSdgPage: React.FC<NoSdgPageProps> = ({ recommendation }) => {
 
         <button
           onClick={() => setOpenModal(true)}
-          className="mt-4 px-4 py-2 bg-purple-700 text-white rounded-md hover:bg-purple-800 transition-colors duration-200"
+          className="mt-4 px-4 py-2 bg-[#4A7FCB] text-white rounded-md hover:bg-[#3B6FBA] transition-colors duration-200"
         >
           Show detailed guidance
         </button>
@@ -115,7 +114,7 @@ const NoSdgPage: React.FC<NoSdgPageProps> = ({ recommendation }) => {
               </p>
               <textarea
                 readOnly
-                className="w-full p-3 rounded border border-gray-300 focus:border-purple-500 focus:outline-none"
+                className="w-full p-3 rounded border border-gray-300 focus:border-[#5B92E5] focus:outline-none"
                 onClick={e => handleCopy(e.currentTarget.value)}
               >
                 {recommendation

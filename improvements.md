@@ -43,7 +43,7 @@ contributions and refactoring efforts.
   Consider removing redundant representations or adding clear conversion functions.
 
 ### 4. Hardcoded Classification Thresholds
-- **Location**: 
+- **Location**:
   - `backend/app.py:67` (Aurora: `> 0.4`)
   - `backend/embedding_url.py:176` (`sc >= threshold` with default `0.5`)
   - `backend/embedding_url.py:188` (`main()` uses `threshold=0.4`)

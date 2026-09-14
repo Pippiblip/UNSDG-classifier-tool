@@ -1,5 +1,5 @@
 import React from "react";
-import { SDGValue, CardGridProps } from "@/types/main";
+import { CardGridProps, SDGValue } from "@/types/main";
 
 /*
 CardGrid Component
@@ -42,7 +42,7 @@ const SDGCard = ({ sdgNumber, sdgName, confidence }: SDGCardProps) => {
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+          <div className="w-12 h-12 bg-[#5B92E5] rounded-full flex items-center justify-center text-white font-bold text-lg">
             {sdgNumber}
           </div>
           <div>
@@ -96,7 +96,7 @@ const SDGCard = ({ sdgNumber, sdgName, confidence }: SDGCardProps) => {
 };
 
 const CardGrid = ({ sdgPredictions }: CardGridProps) => {
-  const predictionsArray: Array<SDGPrediction & { sourceKey: string }> =
+  const predictionsArray: Array<SDGValue & { sourceKey: string }> =
     Array.isArray(sdgPredictions)
       ? sdgPredictions.map((item, index) => ({
           ...item,
@@ -111,7 +111,7 @@ const CardGrid = ({ sdgPredictions }: CardGridProps) => {
           }
           return { prediction: 0, sourceKey };
         })
-          .filter((item): item is SDGPrediction & { sourceKey: string } => {
+          .filter((item): item is SDGValue & { sourceKey: string } => {
             return item.prediction > 0;
           }));
 

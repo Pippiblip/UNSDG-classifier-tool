@@ -365,7 +365,7 @@ st_url_threshold: 0.5
 
 ## Summary
 
-The hardcoded threshold problem has 8 viable solutions ranging from simple environment variable overrides to sophisticated statistical calibration. 
+The hardcoded threshold problem has 8 viable solutions ranging from simple environment variable overrides to sophisticated statistical calibration.
 
 **Recommended approach**: Start with **Method 1 (Environment Variables)** + **Method 3 (Dual Thresholds)** for quick impact, then add **Method 2 (API Parameters)** for per-request control, and optionally **Method 4 (Config File)** for persistent settings.
 

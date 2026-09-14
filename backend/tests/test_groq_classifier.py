@@ -91,10 +91,14 @@ def test_main_preserves_current_response_structure(monkeypatch):
 def test_main_never_returns_negative_confidence(monkeypatch):
     scores = {name: -0.25 for name in sdg_constants.SDG_NAMES}
     monkeypatch.setattr(
-        embedding_url,
-        "classify_repo",
-        lambda *args, **kwargs: {"repo": "owner/repo", "scores": scores},
+        embedding_url, "fetch_repo_text", lambda *args, **kwargs: {
+            "owner": "owner",
+            "repo": "repo",
+            "text": "A project description with enough content for classification.",
+        },
     )
+    monkeypatch.setattr(embedding_url, "classify_text", lambda text: scores)
+    monkeypatch.setattr(embedding_url, "_aurora_scores", lambda *args: {})
 
     result = embedding_url.main("https://github.com/owner/repo")
 
