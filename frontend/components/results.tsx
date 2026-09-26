@@ -50,6 +50,7 @@ const Results = ({ results, setResults, setError }: ResultsProps) => {
 
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confidenceThreshold, setConfidenceThreshold] = useState(0);
 
   const getScore = (v: number | SDGValue | null | undefined) =>
     typeof v === "number"
@@ -216,6 +217,11 @@ const Results = ({ results, setResults, setError }: ResultsProps) => {
   };
 
   const noSdgs = isNoSdgs(results?.predictions);
+  const visiblePredictions = Object.fromEntries(
+    Object.entries(results?.predictions ?? {}).filter(([, value]) =>
+      getScore(value as number | SDGValue) >= confidenceThreshold,
+    ),
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br">
@@ -264,7 +270,49 @@ const Results = ({ results, setResults, setError }: ResultsProps) => {
                 </div>
               ) : (
                 <>
-                  <CardGrid sdgPredictions={results.predictions} />
+                  <div className="flex items-start gap-6">
+                    <div className="min-w-0 flex-1">
+                      {Object.keys(visiblePredictions).length > 0 ? (
+                        <CardGrid sdgPredictions={visiblePredictions} />
+                      ) : (
+                        <p className="py-12 text-center text-gray-600">
+                          No results meet this confidence threshold.
+                        </p>
+                      )}
+                    </div>
+                    <aside className="sticky top-6 flex shrink-0 flex-col items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-5 shadow-sm">
+                      <label
+                        htmlFor="confidence-threshold"
+                        className="max-w-24 text-center text-sm font-semibold text-gray-800"
+                      >
+                        Minimum relevance
+                      </label>
+                      <output
+                        htmlFor="confidence-threshold"
+                        className="text-lg font-bold text-gray-900"
+                      >
+                        {Math.round(confidenceThreshold * 100)}%
+                      </output>
+                      <span className="text-xs font-medium text-green-700">High</span>
+                      <input
+                        id="confidence-threshold"
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={confidenceThreshold}
+                        onChange={(event) =>
+                          setConfidenceThreshold(Number(event.target.value))
+                        }
+                        aria-label="Minimum prediction relevance"
+                        className="confidence-slider h-52 w-6 cursor-pointer"
+                      />
+                      <span className="text-xs font-medium text-red-700">Low</span>
+                      <span className="text-xs text-gray-500">
+                        {Object.keys(visiblePredictions).length} shown
+                      </span>
+                    </aside>
+                  </div>
 
                   <div className="flex flex-wrap items-center justify-end gap-3 mt-6">
                     <button
