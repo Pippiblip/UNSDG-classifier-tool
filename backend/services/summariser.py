@@ -23,6 +23,8 @@ import requests
 import os
 from dotenv import load_dotenv
 
+from services.text_cleaner import clean_text
+
 
 load_dotenv()
 
@@ -30,7 +32,7 @@ k = os.getenv("GROQ_API_KEY")
 
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL   = "openai/gpt-oss-20b"
+GROQ_MODEL   = "llama-3.1-8b-instantcl"
 
 # import hashlib
 # import diskcache
@@ -41,9 +43,14 @@ GROQ_MODEL   = "openai/gpt-oss-20b"
 #     _cache = None
 
 _THINKING_CAPABLE_MODEL_PREFIXES = ("Qwen/Qwen3", "qwen/qwen3")
+_REASONING_EFFORT_MODEL_PREFIXES = ("openai/gpt-oss",)
 
 def _supports_enable_thinking(model_id: str) -> bool:
     return model_id.startswith(_THINKING_CAPABLE_MODEL_PREFIXES)
+
+
+def _supports_reasoning_effort(model_id: str) -> bool:
+    return model_id.startswith(_REASONING_EFFORT_MODEL_PREFIXES)
 
 
 # ─────────────────────────── prompt design ────────────────────────────────────
@@ -138,7 +145,7 @@ def _prepare_for_llm(raw_readme: str, max_chars: int = 12_000) -> str:
     """
     Light pre-cleaning before sending to the LLM.
     """
-    text = raw_readme
+    text = clean_text(raw_readme)
 
     text = re.sub(r'```[\s\S]*?```', '', text)
     text = re.sub(r'~~~[\s\S]*?~~~', '', text)
@@ -213,6 +220,9 @@ def summarize_for_sdg(
 
         if _supports_enable_thinking(GROQ_MODEL):
             payload["chat_template_kwargs"] = {"enable_thinking": False}
+
+        if _supports_reasoning_effort(GROQ_MODEL):
+            payload["reasoning_effort"] = "low"
 
         response = requests.post(
             GROQ_API_URL,
@@ -297,6 +307,11 @@ def summarize_for_sdg(
 
 def _validate_output(text: str, name: str, description: str,
                      topics: list[str]) -> str:
+    text = text.strip()
+
+    if text == "NO_SDG_SIGNAL":
+        return text
+
     if not text or len(text.split()) < 10:
         return _fallback_summary(name, description, topics,
                                  reason="LLM returned too-short output")

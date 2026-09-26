@@ -27,48 +27,26 @@ You don't need to be a developer to contribute! There are many meaningful ways t
 
  
 ## Development Setup
- 
-### Prerequisites
- 
-- [Node.js](https://nodejs.org/) v18 or higher
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-- A GitHub personal access token (for API access during development)
-- Git
 
-### Local Setup
- 
-1. **Fork the repository** on GitHub, then clone your fork:
-   ```bash
-   git clone https://github.com/<your-username>/UNSDG-classifier-tool.git
-   cd UNSDG-classifier-tool
-   ```
- 
-2. **Add the upstream remote** so you can pull in future updates:
-   ```bash
-   git remote add upstream https://github.com/chaoss/UNSDG-classifier-tool.git
-   ```
- 
-3. **Install dependencies:**
-   ```bash
-   npm install
-   ```
- 
-4. **Configure environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
- 
-   Then edit `.env` to add your GitHub personal access token:
-   ```
-   GITHUB_TOKEN=your_token_here
-   ```
- 
-5. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
- 
-   The app should be running at `http://localhost:3000`.
+See [Setup Instructions](./SETUP.md) for details.
+
+#### Do I need all three?
+
+The first `/api/classify_st_url` request is slow — the backend downloads the LUKE classifier weights from Hugging Face on first use, then serves from the local cache.
+
+#### Quick start script
+
+[`bash.sh`](bash.sh) automates steps 4 and 6 (backend venv + frontend install, started together):
+
+```bash
+./bash.sh
+```
+
+
+#### Troubleshooting
+
+- **`npm error Could not read package.json`** — you're in the repository root. `cd frontend` first.
+- **The first classification takes several minutes** — the backend downloads Hugging Face models on first use. Later runs read from the local cache.
 
 ## Making a Contribution
  
@@ -114,11 +92,23 @@ Examples: `feat/add-sdg-tooltip`, `fix/api-timeout-handling`, `docs/update-setup
 
 ### 4. Test Your Changes
  
-Before opening a PR, make sure all tests pass:
+Before opening a PR, run the checks that apply to what you touched.
+ 
+**Backend** — pytest, with the virtualenv from setup step 4 activated:
  
 ```bash
-npm test
+cd backend
+pytest tests/
 ```
+ 
+**Frontend** — there is no test runner yet, so linting is the only automated check:
+ 
+```bash
+cd frontend
+npm run lint
+```
+ 
+SDG inference (`backend/services/inference.py`, `sdg_model.py`) has no tests — the model loads real weights, which makes naive unit testing hard. See [docs/TESTING.md](docs/TESTING.md) for the full inventory of what's covered, what isn't, and which gaps are good first issues — setting up a frontend test runner is one of them.
  
 If you're adding new functionality, include tests that cover the new behavior. If you're fixing a bug, add a test that would have caught the bug.
  
@@ -141,7 +131,8 @@ A good pull request:
 - **Describes the change** — explain *what* you changed and *why*, not just *how*
 - **Includes screenshots** for UI changes
 - **Is focused** — one logical change per PR; split large changes into smaller ones if possible
-- **Passes all CI checks** — the PR won't be merged if tests or linting fail
+- **Passes the checks in step 4** — there is no CI pipeline yet, so run the backend tests and the frontend linter locally and say what you ran in the PR description
+
 ### PR Description Template
  
 ```markdown
@@ -190,8 +181,7 @@ Keep the subject line under 72 characters. Use the body to explain the *why* beh
 ## Coding Standards
  
 - Follow the existing code style in the project.
-- Run the linter before committing: `npm run lint`
-- Format your code: `npm run format` (if configured)
+- Run the linter before committing frontend changes: `cd frontend && npm run lint`. (There's no `format` script configured yet — adding one is a welcome contribution.)
 - Avoid committing commented out code or debug `console.log` statements.
 - Use descriptive variable and function names.
 - Keep functions small and focused on a single responsibility.

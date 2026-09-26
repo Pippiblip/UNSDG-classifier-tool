@@ -5,6 +5,7 @@ import CardGrid from "./cardGrid";
 import RawResults from "./rawResults";
 import EditModal from "./editModal";
 import { SDGValue, ResultsData } from "@/types/main";
+import NoSdgPage from "./noSdgPage"
 
 /*
 Results Component
@@ -55,7 +56,9 @@ const Results = ({ results, setResults, setError }: ResultsProps) => {
   const getScore = (v: number | SDGValue | null | undefined) =>
     typeof v === "number"
       ? Number(v)
-      : Number((v as SDGValue)?.prediction ?? 0);
+      : v && typeof v.prediction === "number"
+        ? Number(v.prediction)
+        : 0;
 
   const saveEditedResults = () => {
     if (results) {
@@ -217,6 +220,7 @@ const Results = ({ results, setResults, setError }: ResultsProps) => {
   };
 
   const noSdgs = isNoSdgs(results?.predictions);
+  const recommendation = results?.recommendation;
   const visiblePredictions = Object.fromEntries(
     Object.entries(results?.predictions ?? {}).filter(([, value]) =>
       getScore(value as number | SDGValue) >= confidenceThreshold,

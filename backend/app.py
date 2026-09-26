@@ -5,6 +5,7 @@ from flask_cors import CORS
 from embedding_url import main as classify_url
 from aurora_api import main as aurora_classify
 from dotenv import load_dotenv
+from services.recommendation_pipeline import assess_relevance
 load_dotenv()
 
 try:
@@ -58,6 +59,12 @@ def classify_aurora():
         print(f"Aurora API model failed: {e}")
         return jsonify({"error": str(e), "message": "Aurora API classification failed"}), 500
 
+    # ── Recommendation pipeline: assess why no SDGs were returned ──────────
+    rec = assess_relevance(
+        projectDescription or "",
+        aurora_result.get("project_description", "") or "",
+    )
+
     sdg_preds = aurora_result.get("sdg_predictions", {})
     preds = (
         [{"sdg": name, "prediction": score} for name, score in sdg_preds.items()]
@@ -66,11 +73,18 @@ def classify_aurora():
     )
     filtered = [p for p in preds if p.get("prediction", 0) > 0.4]
 
-    return jsonify({
+    response = {
         "projectName": aurora_result.get("project_name"),
         "projectUrl":  aurora_result.get("project_url"),
         "predictions": filtered,
-    }), 200
+        "recommendation": {
+            "reason": rec["reason"],
+            "suggestions": rec["suggestions"],
+            "text_quality": rec["text_quality"],
+        } if not filtered else None,
+    }
+
+    return jsonify(response), 200
 
 
 # ---------------------------------------------------------------------------
@@ -140,7 +154,7 @@ def classify_st_url():
                        "Ensure the repository is public and the URL is correct.",
         }), 502
 
-    # ── 500 — anything else (model failure, microservice down, etc.) ──────────
+    # ── 500 — anything else (model load failure, inference error, etc.) ───────
     except Exception as e:
         print(f"ST URL model unexpected error: {e}")
         return jsonify({
@@ -148,18 +162,58 @@ def classify_st_url():
             "message": "Sentence Transformer URL model classification failed.",
         }), 500
 
+    # ── Recommendation pipeline: assess why no SDGs were returned ──────────
+    rec = assess_relevance(
+        projectDescription or "",
+        st_url_result.get("summary")
+        or st_url_result.get("meta", {}).get("description", "")
+        or "",
+    )
+
     preds = [
         {"sdg": name, "prediction": score}
         for name, score in st_url_result.get("sdg_predictions", {}).items()
     ]
     filtered = [p for p in preds if p.get("prediction", 0) > 0.4]
 
-    return jsonify({
+    response = {
         "projectName": projectName,
         "projectUrl":  projectUrl,
         "predictions": filtered,
-    }), 200
+        "recommendation": {
+            "reason": rec["reason"],
+            "suggestions": rec["suggestions"],
+            "text_quality": rec["text_quality"],
+        } if not filtered else None,
+    }
+
+    return jsonify(response), 200
+
+
+def _debug_enabled() -> bool:
+    """Whether to run with Werkzeug's interactive debugger.
+
+    The debugger allows arbitrary code execution on any unhandled exception, so
+    this fails closed: it is off unless FLASK_DEBUG is an explicitly recognised
+    truthy value. Flask's own get_debug_flag() treats *any* unrecognised string
+    as true (FLASK_DEBUG=off enables it), which is the wrong way round for a
+    switch that opens a remote shell.
+    """
+    return os.environ.get("FLASK_DEBUG", "").strip().lower() in {
+        "1", "true", "yes", "on",
+    }
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    debug = _debug_enabled()
+    if debug:
+        print(
+            "\n*** FLASK_DEBUG is on: the Werkzeug debugger executes arbitrary "
+            "code on error.\n*** Local development only — never on a reachable "
+            "host.\n"
+        )
+
+    # Default 8010 rather than Flask's 5000 — macOS AirPlay Receiver occupies 5000.
+    # Override with BACKEND_PORT (.env). Whatever this binds, point
+    # NEXT_PUBLIC_API_BASE_URL in frontend/.env.local at it.
+    app.run(debug=debug, port=int(os.environ.get("BACKEND_PORT", 8010)))

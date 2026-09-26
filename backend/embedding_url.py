@@ -4,14 +4,14 @@ import base64
 import requests
 from urllib.parse import urlparse
 from typing import List, Dict, Tuple
-from transformers import pipeline
-from sentence_transformers import SentenceTransformer
 import numpy as np
 import sdg_constants
 from sdg_constants import SDG_LABELS, SDG_NAMES, SDG_DESCS
 from services.repo_fetcher import get_provider
 from urllib.parse import urlparse
 from services.summariser import summarize_for_sdg
+from services.embedder import get_embedder
+from services.inference import predict_scores
 
 # repo_fetcher may define ProviderError; if not available, fall back to a generic exception.
 try:
@@ -28,8 +28,9 @@ def fetch_repo_text(url: str, project_description: str = "", max_issues: int = 1
     provider = get_provider(url, token=token)
     meta: Dict[str, str] = {"name": "", "description": "", "homepage": ""}
     try:
-        if hasattr(provider, "fetch_meta"):
-            meta_candidate = provider.fetch_meta()
+        fetch_meta = getattr(provider, "fetch_meta", None)
+        if callable(fetch_meta):
+            meta_candidate = fetch_meta()
             if isinstance(meta_candidate, dict):
                 meta = meta_candidate
         else:
@@ -68,6 +69,7 @@ def fetch_repo_text(url: str, project_description: str = "", max_issues: int = 1
         description=description,
         topics=topics
     )
+    print(extracted_summary)
     return {
         "owner": provider._owner,
         "repo":  provider._repo,
@@ -80,48 +82,55 @@ def fetch_repo_text(url: str, project_description: str = "", max_issues: int = 1
         },
     }
 
-_embedder = None
-
-
-def get_embedder():
-    global _embedder
-    if _embedder is None:
-        _embedder = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
-    return _embedder
-
 
 def zero_shot_scores(text: str, labels: List[str]) -> Tuple[np.ndarray, Dict]:
 
     """
-    Now calls GE-Lab microservice.
+    Score *text* against every SDG with the fine-tuned LUKE classifier.
+
+    Runs in-process by default. Setting MODEL_SERVICE_URL routes the call to a
+    remote model service over HTTP instead, which is how this worked when the
+    model lived in its own `models/` Flask app. The seam is kept so the model
+    can be moved back onto its own host — for GPU inference, or to scale it
+    apart from the API — without touching this module's callers.
+
+    Read at call time, not import time: app.py calls load_dotenv() *after*
+    importing this module, so a module-level constant would miss the .env value.
     """
+    service_url = os.environ.get("MODEL_SERVICE_URL", "").strip()
 
-    ge_lab_url = "http://localhost:9010/predict" 
-
-    
-    response = requests.post(ge_lab_url, json={"text": text}, timeout=1500)
-    response.raise_for_status()
-
-    # GET SCORE FROM THE GE-LAB MODEL
-    payload = response.json()
-
-    
-    scores_obj = payload.get("scores")
-    if scores_obj is None and isinstance(payload.get("data"), dict):
-        scores_obj = payload["data"].get("scores")
+    if service_url:
+        response = requests.post(
+            f"{service_url.rstrip('/')}/predict",
+            json={"text": text},
+            timeout=1500,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        scores_obj = payload.get("scores")
+        if scores_obj is None and isinstance(payload.get("data"), dict):
+            scores_obj = payload["data"].get("scores")
+    else:
+        # Same contract the /predict route served, including its 4-decimal
+        # rounding — see services.inference.predict_scores.
+        payload = {}
+        scores_obj = predict_scores(text)
 
     if isinstance(scores_obj, dict):
         ordered_scores = [scores_obj.get(label) for label in sdg_constants.SDG_NAMES]
         if any(v is None for v in ordered_scores):
             raise KeyError(
-                "Microservice scores dict missing expected SDG keys. "
+                "Model scores dict missing expected SDG keys. "
                 f"Available keys sample={list(scores_obj.keys())[:5]}"
             )
         scores_list = ordered_scores
     elif isinstance(scores_obj, (list, tuple)):
         scores_list = list(scores_obj)
     else:
-        raise TypeError(f"Unexpected microservice scores type={type(scores_obj)} payload_keys={list(payload.keys())}")
+        raise TypeError(
+            f"Unexpected model scores type={type(scores_obj)} "
+            f"payload_keys={list(payload.keys())}"
+        )
 
     detailed_info = {
         "labels": labels,  
@@ -144,7 +153,7 @@ def embedding_similarity_scores(text: str, label_texts: List[str]) -> np.ndarray
     sims = np.clip((sims - COSINE_LOW) / (COSINE_HIGH - COSINE_LOW), 0, 1)
     return sims
 
-def ensemble_scores(zs: np.ndarray, es: np.ndarray, alpha: float = 0.3) -> np.ndarray:
+def ensemble_scores(zs: np.ndarray, es: np.ndarray, alpha: float = 0.5) -> np.ndarray:
     """
     Simple mean ensemble; tune alpha if desired.
     """
@@ -179,20 +188,23 @@ def classify_repo(url: str, threshold: float = 0.5, top_k: int = 10, use_ensembl
         "repo":        f"{data['owner']}/{data['repo']}",  
         "predictions": selected[:top_k],                  
         "top_all":     ranked[:top_k],
-        "meta":        data["meta"],                       
+        "meta":        data["meta"],
+        "summary":     text,
     }
 
 # ── CHANGE 4: main() accepts and passes project_description ──────────────────
 def main(url: str, project_description: str = ""):
 
-    result = classify_repo(url, threshold=0.4, use_ensemble=True, proj_desc=project_description)
+    result = classify_repo(url, threshold=0.7, use_ensemble=True, proj_desc=project_description)
 
     predictions = {
         "project_name": result["repo"],
         "project_url": url,
         "sdg_predictions": {
             name: float(f"{score:.3f}") for (name, score) in result["predictions"]
-        }
+        },
+        "summary": result["summary"],
+        "meta": result["meta"],
     }
 
     return predictions

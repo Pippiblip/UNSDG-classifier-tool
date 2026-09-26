@@ -102,16 +102,18 @@ const CardGrid = ({ sdgPredictions }: CardGridProps) => {
           ...item,
           sourceKey: String(index),
         }))
-      : (Object.entries(sdgPredictions ?? {})
-          .map(([sourceKey, item]) => {
-            if (typeof item === "number") {
-              return { prediction: item, sourceKey };
-            }
+      : (Object.entries(sdgPredictions ?? {}).map(([sourceKey, item]) => {
+          if (typeof item === "number") {
+            return { prediction: item, sourceKey };
+          }
+          if (item && typeof item === "object" && "prediction" in item) {
             return { ...item, sourceKey };
-          })
+          }
+          return { prediction: 0, sourceKey };
+        })
           .filter((item): item is SDGValue & { sourceKey: string } => {
-            return item.sdg != null && item.prediction > 0;
-          }) as Array<SDGValue & { sourceKey: string }>);
+            return item.prediction > 0;
+          }));
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
