@@ -7,6 +7,8 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { ResultsData } from "@/types/main";
 import { sdgApi } from "@/services/api";
 
+const README_ANALYSER_TIMEOUT_MS = 2 * 60 * 1000;
+
 /*
 MainScreen Component
 - Renders the main screen with project input form
@@ -86,7 +88,31 @@ const MainScreen: React.FC<{
       setIsUploading(true);
       setUploadMsg(null);
 
-      const response = await sdgApi.classifyAurora(finalizedData);
+      const readmeResult = sdgApi.classifySTUrl(finalizedData);
+      const auroraResult = sdgApi.classifyAurora(finalizedData);
+      void auroraResult.catch(() => undefined);
+      let readmeTimeoutId: number | undefined;
+      const readmeTimeout = new Promise<never>((_, reject) => {
+        readmeTimeoutId = window.setTimeout(
+          () => reject(new Error("Readme Analyser timed out")),
+          README_ANALYSER_TIMEOUT_MS,
+        );
+      });
+
+      let response: Awaited<ReturnType<typeof sdgApi.classifySTUrl>>;
+      try {
+        response = await Promise.race([readmeResult, readmeTimeout]);
+      } catch (readmeError) {
+        console.warn(
+          "Readme Analyser unavailable, waiting for Aurora fallback:",
+          readmeError,
+        );
+        response = await auroraResult;
+      } finally {
+        if (readmeTimeoutId !== undefined) {
+          window.clearTimeout(readmeTimeoutId);
+        }
+      }
 
       if (response && response.repo_url) {
         setUploadMsg("Text Analyzing Successfully!");
