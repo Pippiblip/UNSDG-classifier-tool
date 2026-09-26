@@ -1,6 +1,6 @@
-_"""
+"""
 recommendation_pipeline.py
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 A pipeline that determines why a project may not have received any SDG
 classifications and provides recommendations for improving the input data.
