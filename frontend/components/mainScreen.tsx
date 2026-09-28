@@ -7,7 +7,7 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { ResultsData } from "@/types/main";
 import { sdgApi } from "@/services/api";
 
-const README_ANALYSER_TIMEOUT_MS = 2 * 60 * 1000;
+const README_ANALYSER_TIMEOUT_MS = 30 * 1000;
 
 /*
 MainScreen Component

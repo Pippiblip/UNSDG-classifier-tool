@@ -265,13 +265,7 @@ const Results = ({ results, setResults, setError }: ResultsProps) => {
             <h3 className="text-2xl font-semibold text-gray-800">UN SDG Goals Analysis</h3>
             {results ? (
               noSdgs ? (
-                <div className="py-16">
-                  <div className="text-center px-4">
-                    <h2 className="text-3xl font-bold text-black">
-                      This project does not satisfy any SDG
-                    </h2>
-                  </div>
-                </div>
+                <NoSdgPage recommendation={recommendation} />
               ) : (
                 <>
                   <div className="flex items-start gap-6">
