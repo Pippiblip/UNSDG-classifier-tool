@@ -10,7 +10,7 @@ const reasonMessages: Record<string, string> = {
   text_too_short: "Your project description and README are too short to assess SDG relevance.",
   no_sdg_signals: "No SDG-relevant signals were found in the provided text.",
   heavily_technical: "The description appears heavily technical without clear real-world impact signals.",
-  threshold_too_high: "The SDG relevance threshold may be too high for the available content.",
+  threshold_too_high: "The text shows some SDG-relevant signals, but the project context may need more detail.",
   signals_present_but_low_similarity: "SDG-relevant signals were found, but similarity scores are low.",
 };
 
@@ -18,7 +18,7 @@ const reasonDescriptions: Record<string, string> = {
   text_too_short: "Expand your project description to at least 20-30 words including what problem your project solves.",
   no_sdg_signals: "Make your description more elaborate and less technical. Focus on what the project does, who benefits, and the real-world impact.",
   heavily_technical: "Rewrite the description in non-technical terms. Remove mentions of programming languages, frameworks, and libraries. Focus on the problem your project addresses.",
-  threshold_too_high: "Try providing more detailed description or lowering the SDG relevance threshold.",
+  threshold_too_high: "Add specific details about your project's impact, beneficiaries, and real-world context.",
   signals_present_but_low_similarity: "Add more specific details about your project's impact, beneficiaries, and geographic or sector context.",
 };
 

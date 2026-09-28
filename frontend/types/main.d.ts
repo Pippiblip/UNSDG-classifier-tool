@@ -17,6 +17,8 @@ export type Recommendation = {
   reason: string;
   suggestions: string[];
   text_quality: number;
+  nearest_sdg?: string;
+  nearest_similarity?: number;
 };
 
 export type ResultsData = {

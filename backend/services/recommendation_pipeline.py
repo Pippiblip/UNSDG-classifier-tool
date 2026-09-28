@@ -15,7 +15,8 @@ Returns a structured result containing:
 """
 
 import re
-from typing import List, Tuple
+from functools import lru_cache
+from typing import Tuple
 
 import numpy as np
 
@@ -24,6 +25,7 @@ from services.embedder import get_embedder
 
 
 # Embedder is shared process-wide via services.embedder.
+
 
 def _clean_text(raw: str) -> str:
     """Basic cleaning: strip, collapse whitespace, remove bare URLs."""
@@ -40,6 +42,37 @@ def _is_too_short(text: str, min_words: int = 15) -> bool:
     return len(cleaned.split()) < min_words
 
 
+def _contains_keyword(text: str, keyword: str) -> bool:
+    pattern = r"\b" + r"\s+".join(re.escape(part) for part in keyword.split()) + r"\b"
+    return re.search(pattern, text) is not None
+
+
+def _combine_text(description: str, readme: str) -> str:
+    """Avoid counting the submitted description twice when the summary repeats it."""
+    normalized_description = " ".join(description.casefold().split())
+    normalized_readme = " ".join(readme.casefold().split())
+    if normalized_description and normalized_description in normalized_readme:
+        return readme
+    return f"{description} {readme}"
+
+
+@lru_cache(maxsize=1)
+def _get_sdg_embeddings() -> np.ndarray:
+    """Encode the SDG descriptions once, on the first embedding-based assessment."""
+    embeddings = get_embedder().encode(
+        SDG_DESCS,
+        normalize_embeddings=True,
+        convert_to_numpy=True,
+    )
+    return np.asarray(embeddings)
+
+
+def _bounded_quality(value: float) -> float:
+    if not np.isfinite(value):
+        return 0.0
+    return float(np.clip(value, 0.0, 1.0))
+
+
 def _has_sdg_signals(text: str) -> Tuple[bool, str]:
     """
     Check if text contains signals that could map to SDGs.
@@ -53,9 +86,9 @@ def _has_sdg_signals(text: str) -> Tuple[bool, str]:
     cleaned = _clean_text(text).lower()
 
     # Explicit SDG mentions
-    sdg_keywords = ["sdg", "sustainable development", "goal", "goal 1", "goal 2"]
+    sdg_keywords = ["sdg", "sustainable development", "goal"]
     for kw in sdg_keywords:
-        if kw in cleaned:
+        if _contains_keyword(cleaned, kw):
             return True, "sdg_mentioned"
 
     # Domain-specific vocabulary that maps to SDG topics
@@ -66,13 +99,13 @@ def _has_sdg_signals(text: str) -> Tuple[bool, str]:
         "water": ["water", "sanitation", "hygiene", "wash"],
         "energy": ["energy", "power", "electricity", "renewable"],
         "agriculture": ["agriculture", "farm", "farming", "crop", "rural"],
-        "governance": ["governance", "policy", "government", "policy"],
+        "governance": ["governance", "policy", "government"],
         "gender": ["gender", "women", "equality", "female"],
     }
 
     found_categories = []
     for category, keywords in domain_keywords.items():
-        if any(kw in cleaned for kw in keywords):
+        if any(_contains_keyword(cleaned, kw) for kw in keywords):
             found_categories.append(category)
 
     if found_categories:
@@ -81,7 +114,7 @@ def _has_sdg_signals(text: str) -> Tuple[bool, str]:
     # Check for problem/beneficiary language
     problem_keywords = ["problem", "solution", "beneficiaries", "users", "impact",
                         "helps", "addresses", "reduces", "improves"]
-    if any(kw in cleaned for kw in problem_keywords):
+    if any(_contains_keyword(cleaned, kw) for kw in problem_keywords):
         return True, "problem_description"
 
     # Check for technical-only content (no domain signals, no problem language)
@@ -89,7 +122,7 @@ def _has_sdg_signals(text: str) -> Tuple[bool, str]:
     tech_keywords = ["python", "javascript", "react", "api", "database",
                      "framework", "library", "container", "docker", "cls",
                      "function", "import", "class", "module"]
-    tech_count = sum(1 for kw in tech_keywords if kw in cleaned)
+    tech_count = sum(1 for kw in tech_keywords if _contains_keyword(cleaned, kw))
     
     # If >40% of keywords are technical, flag as heavily technical
     word_count = len(cleaned.split())
@@ -122,7 +155,7 @@ def assess_relevance(
     readme_clean = _clean_text(readme_text)
     
     # Check combined text first
-    combined = f"{desc_clean} {readme_clean}"
+    combined = _combine_text(desc_clean, readme_clean)
     
     # Step 1: Check if too short
     if _is_too_short(combined, min_words=20):
@@ -145,32 +178,38 @@ def assess_relevance(
         # Check embedding similarity as secondary check
         embedder = get_embedder()
         desc_emb = embedder.encode([desc_clean], normalize_embeddings=True)[0]
-        sdg_embs = embedder.encode(SDG_DESCS, normalize_embeddings=True)
+        sdg_embs = _get_sdg_embeddings()
         sims = np.dot(sdg_embs, desc_emb)
-        max_sim = float(np.max(sims))
+        max_index = int(np.argmax(sims))
+        max_sim = float(sims[max_index])
+        nearest_sdg = SDG_NAMES[max_index]
         
         if max_sim > 0.25:
             # Has signals and good similarity - just threshold issue
             return {
                 "relevant": True,
                 "reason": "threshold_too_high",
-                "text_quality": min(max_sim * 4, 1.0),
+                "text_quality": _bounded_quality(max_sim * 4),
                 "suggestions": [
-                    "Try increasing the SDG relevance threshold in settings",
                     "Provide more specific details about your project's impact",
+                    "Name the communities or beneficiaries your project supports",
                 ],
+                "nearest_sdg": nearest_sdg,
+                "nearest_similarity": max_sim,
             }
         
         # Has signals but low similarity - might need more detail
         return {
             "relevant": True,
             "reason": "signals_present_but_low_similarity",
-            "text_quality": round(max_sim * 5, 2),
+            "text_quality": _bounded_quality(max_sim * 5),
             "suggestions": [
                 "Add more specific problem statements and real-world impact",
                 "Include geographic or sector context (e.g., 'rural farmers', 'low-income countries')",
                 "Mention explicit beneficiaries (e.g., 'students', 'patients', 'farmers')",
             ],
+            "nearest_sdg": nearest_sdg,
+            "nearest_similarity": max_sim,
         }
     
     # Step 3: No signals detected - check if heavily technical
