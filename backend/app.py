@@ -189,6 +189,10 @@ def classify_st_url():
         or st_url_result.get("meta", {}).get("description", "")
         or "",
     )
+    readme_assessment = assess_relevance(
+        st_url_result.get("readme_excerpt", "") or "",
+        "",
+    )
 
     preds = [
         {"sdg": name, "prediction": score}
@@ -201,6 +205,10 @@ def classify_st_url():
         "projectUrl":  projectUrl,
         "predictions": filtered,
         "recommendation": _recommendation_payload(rec) if not filtered else None,
+        "readme_assessment": {
+            **_recommendation_payload(readme_assessment),
+            "relevant": readme_assessment["relevant"],
+        },
     }
 
     return jsonify(response), 200

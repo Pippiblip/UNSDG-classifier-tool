@@ -24,8 +24,6 @@ from sdg_constants import SDG_DESCS, SDG_NAMES
 from services.embedder import get_embedder
 
 
-# Embedder is shared process-wide via services.embedder.
-
 
 def _clean_text(raw: str) -> str:
     """Basic cleaning: strip, collapse whitespace, remove bare URLs."""
@@ -48,7 +46,7 @@ def _contains_keyword(text: str, keyword: str) -> bool:
 
 
 def _combine_text(description: str, readme: str) -> str:
-    """Avoid counting the submitted description twice when the summary repeats it."""
+    
     normalized_description = " ".join(description.casefold().split())
     normalized_readme = " ".join(readme.casefold().split())
     if normalized_description and normalized_description in normalized_readme:
@@ -65,6 +63,29 @@ def _get_sdg_embeddings() -> np.ndarray:
         convert_to_numpy=True,
     )
     return np.asarray(embeddings)
+
+
+def _encode_text_chunks(text: str, embedder) -> np.ndarray:
+    tokenizer = embedder.tokenizer
+    max_content_tokens = embedder.max_seq_length - tokenizer.num_special_tokens_to_add(pair=False)
+    token_ids = tokenizer.encode(text, add_special_tokens=False)
+    if not token_ids:
+        chunks = [text]
+    else:
+        token_chunks = [
+            token_ids[index:index + max_content_tokens]
+            for index in range(0, len(token_ids), max_content_tokens)
+        ]
+        chunks = tokenizer.batch_decode(
+            token_chunks,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=True,
+        )
+    return np.asarray(embedder.encode(
+        chunks,
+        normalize_embeddings=True,
+        convert_to_numpy=True,
+    ))
 
 
 def _bounded_quality(value: float) -> float:
@@ -117,8 +138,7 @@ def _has_sdg_signals(text: str) -> Tuple[bool, str]:
     if any(_contains_keyword(cleaned, kw) for kw in problem_keywords):
         return True, "problem_description"
 
-    # Check for technical-only content (no domain signals, no problem language)
-    # Heavily technical text tends to have many framework/languages terms
+    # Check for heavily technical content (e.g., code, libraries, frameworks)
     tech_keywords = ["python", "javascript", "react", "api", "database",
                      "framework", "library", "container", "docker", "cls",
                      "function", "import", "class", "module"]
@@ -129,7 +149,6 @@ def _has_sdg_signals(text: str) -> Tuple[bool, str]:
     if word_count > 0 and tech_count / word_count > 0.4:
         return False, "heavily_technical"
     
-    # No signals found at all
     return False, "no_signals"
 
 
@@ -174,12 +193,11 @@ def assess_relevance(
     has_signals, signal_reason = _has_sdg_signals(combined)
     
     if has_signals:
-        # Text has signals - likely the threshold is the issue
-        # Check embedding similarity as secondary check
         embedder = get_embedder()
-        desc_emb = embedder.encode([desc_clean], normalize_embeddings=True)[0]
+        description_embeddings = _encode_text_chunks(desc_clean, embedder)
         sdg_embs = _get_sdg_embeddings()
-        sims = np.dot(sdg_embs, desc_emb)
+        sims_by_chunk = np.dot(description_embeddings, sdg_embs.T)
+        sims = np.max(sims_by_chunk, axis=0)
         max_index = int(np.argmax(sims))
         max_sim = float(sims[max_index])
         nearest_sdg = SDG_NAMES[max_index]
