@@ -77,6 +77,7 @@ def fetch_repo_text(url: str, project_description: str = "", max_issues: int = 1
         topics=topics
     )
     readme_excerpt = _readme_assessment_excerpt(readme)
+    print(f"DEBUG - Extracted summary length: {len(extracted_summary.split())} words")
     print(extracted_summary)
     return {
         "owner": provider._owner,
@@ -217,9 +218,11 @@ def main(url: str, project_description: str = ""):
         "meta": result["meta"],
         "readme_excerpt": result.get("readme_excerpt", ""),
     }
+    print(predictions)
 
     return predictions
 
 if __name__ == "__main__":
     print("\033[43m GET THE REPO_ANALYSED RESULTS\033[0m")
+
     

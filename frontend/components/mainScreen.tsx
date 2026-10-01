@@ -5,9 +5,10 @@ import { TiTick } from "react-icons/ti";
 import { ImCross } from "react-icons/im";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { ResultsData } from "@/types/main";
+import axios from "axios";
 import { sdgApi } from "@/services/api";
 
-const README_ANALYSER_TIMEOUT_MS = 30 * 1000;
+const ST_URL_TIMEOUT_MS = 30 * 1000;
 
 /*
 MainScreen Component
@@ -83,7 +84,23 @@ const MainScreen: React.FC<{
       setIsUploading(true);
       setUploadMsg(null);
 
-      const response = await sdgApi.classifyAurora(finalizedData);
+      let response;
+      try {
+        response = await sdgApi.classifySTUrl(
+          finalizedData,
+          ST_URL_TIMEOUT_MS,
+        );
+      } catch (error) {
+        const stUrlTimedOut =
+          axios.isAxiosError(error) &&
+          !error.response &&
+          ["ECONNABORTED", "ETIMEDOUT"].includes(error.code ?? "");
+
+        if (!stUrlTimedOut) throw error;
+
+        console.warn("ST URL classification timed out; falling back to Aurora.");
+        response = await sdgApi.classifyAurora(finalizedData);
+      }
 
       if (response && response.repo_url) {
         setUploadMsg("Text Analyzing Successfully!");
@@ -93,11 +110,11 @@ const MainScreen: React.FC<{
 
       setResults(response as ResultsData);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Classification error:", error);
 
       // Axios error
-      if (error?.response) {
+      if (axios.isAxiosError(error) && error.response) {
         console.error("Status:", error.response.status);
         console.error("Response data:", error.response.data);
 
@@ -110,7 +127,7 @@ const MainScreen: React.FC<{
       }
 
       // Network error
-      else if (error?.request) {
+      else if (axios.isAxiosError(error) && error.request) {
         console.error("No response received from backend:", error.request);
 
         setUploadMsg(
@@ -123,7 +140,9 @@ const MainScreen: React.FC<{
         console.error("Unexpected error:", error);
 
         setUploadMsg(
-          error?.message || "An unexpected error occurred. Please try again."
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred. Please try again."
         );
       }
 
