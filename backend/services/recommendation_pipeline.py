@@ -229,7 +229,6 @@ def assess_relevance(
             "nearest_sdg": nearest_sdg,
             "nearest_similarity": max_sim,
         }
-    
     # Step 3: No signals detected - check if heavily technical
     if signal_reason == "heavily_technical":
         return {
