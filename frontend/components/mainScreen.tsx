@@ -49,24 +49,19 @@ const MainScreen: React.FC<{
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !projectName ||
-      !projectUrl ||
-      !projectDescription
-      // !problemStatement ||
-      // !longTermGoal ||
-      // !solutionApproach ||
-      // !targetAudience
-    ) {
+    if (!projectName || !projectUrl || !projectDescription) {
       setUploadMsg("Please fill in all required fields before submitting.");
       return;
     }
 
-        let isValidRepoUrl = false;
+    let isValidRepoUrl = false;
+
     try {
       const url = new URL(projectUrl);
+
       isValidRepoUrl = /^\/[^/]+\/[^/]+/.test(url.pathname);
-    } catch {
+    } catch (error) {
+      console.error("Invalid URL format:", error);
       isValidRepoUrl = false;
     }
 
@@ -75,9 +70,9 @@ const MainScreen: React.FC<{
       return;
     }
     const finalizedData = {
-      projectName: projectName,
-      projectUrl: projectUrl,
-      projectDescription: projectDescription,
+      projectName,
+      projectUrl,
+      projectDescription,
     };
 
     localStorage.setItem("projectDescription", projectDescription);
@@ -88,40 +83,50 @@ const MainScreen: React.FC<{
       setIsUploading(true);
       setUploadMsg(null);
 
-      const readmeResult = sdgApi.classifySTUrl(finalizedData);
-      const auroraResult = sdgApi.classifyAurora(finalizedData);
-      void auroraResult.catch(() => undefined);
-      let readmeTimeoutId: number | undefined;
-      const readmeTimeout = new Promise<never>((_, reject) => {
-        readmeTimeoutId = window.setTimeout(
-          () => reject(new Error("Readme Analyser timed out")),
-          README_ANALYSER_TIMEOUT_MS,
-        );
-      });
-
-      let response: Awaited<ReturnType<typeof sdgApi.classifySTUrl>>;
-      try {
-        response = await Promise.race([readmeResult, readmeTimeout]);
-      } catch (readmeError) {
-        console.warn(
-          "Readme Analyser unavailable, waiting for Aurora fallback:",
-          readmeError,
-        );
-        response = await auroraResult;
-      } finally {
-        if (readmeTimeoutId !== undefined) {
-          window.clearTimeout(readmeTimeoutId);
-        }
-      }
+      const response = await sdgApi.classifyAurora(finalizedData);
 
       if (response && response.repo_url) {
+        setUploadMsg("Text Analyzing Successfully!");
+      } else {
         setUploadMsg("Text Analyzing Successfully!");
       }
 
       setResults(response as ResultsData);
-    } catch (error) {
-      console.error("Error:", error);
-      setUploadMsg("Text Analyzing Failed. Please try again.");
+
+    } catch (error: any) {
+      console.error("Classification error:", error);
+
+      // Axios error
+      if (error?.response) {
+        console.error("Status:", error.response.status);
+        console.error("Response data:", error.response.data);
+
+        const backendMessage =
+          error.response.data?.message ||
+          error.response.data?.error ||
+          `Request failed with status ${error.response.status}`;
+
+        setUploadMsg(backendMessage);
+      }
+
+      // Network error
+      else if (error?.request) {
+        console.error("No response received from backend:", error.request);
+
+        setUploadMsg(
+          "Could not connect to the server."
+        );
+      }
+
+      // Other error
+      else {
+        console.error("Unexpected error:", error);
+
+        setUploadMsg(
+          error?.message || "An unexpected error occurred. Please try again."
+        );
+      }
+
     } finally {
       setIsUploading(false);
     }
