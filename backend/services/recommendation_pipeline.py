@@ -172,7 +172,6 @@ def assess_relevance(
                 "Mention explicit beneficiaries (e.g., 'students', 'patients', 'farmers')",
             ],
         }
-    
     # Step 3: No signals detected - check if heavily technical
     if signal_reason == "heavily_technical":
         return {
