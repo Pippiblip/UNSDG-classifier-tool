@@ -186,8 +186,13 @@ const Results = ({ results, setResults, setError }: ResultsProps) => {
       return;
     }
 
+    if (Object.keys(visiblePredictions).length === 0) {
+      setError("No SDG predictions meet the selected relevance threshold.");
+      return;
+    }
+
     try {
-      const predictions = results.predictions as Record<string, number | SDGValue>;
+      const predictions = visiblePredictions as Record<string, number | SDGValue>;
       const zip = new JSZip();
 
       const files = [
