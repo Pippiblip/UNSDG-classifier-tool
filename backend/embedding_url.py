@@ -206,7 +206,7 @@ def classify_repo(url: str, threshold: float = 0.3, top_k: int = 10, use_ensembl
 # ── CHANGE 4: main() accepts and passes project_description ──────────────────
 def main(url: str, project_description: str = ""):
 
-    result = classify_repo(url, threshold=0.5, use_ensemble=True, proj_desc=project_description)
+    result = classify_repo(url, threshold=0.3, use_ensemble=True, proj_desc=project_description)
 
     predictions = {
         "project_name": result["repo"],

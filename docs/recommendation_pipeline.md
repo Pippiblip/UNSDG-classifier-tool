@@ -41,6 +41,11 @@ The route inputs differ slightly:
 The current `aurora_api.main()` response does not set a `project_description` property. Consequently, the Aurora route normally assesses the submitted description alone.
 
 The ST URL path fetches repository metadata, topics, and README text. `fetch_repo_text()` gives the user's submitted description priority over the repository's metadata description, then passes the README and metadata to `summarize_for_sdg()`. The classifier summary continues to feed the existing no-predictions recommendation. Separately, the fetched README is passed through the shared `clean_text()` helper and capped at 500 whitespace-separated words; this excerpt is assessed independently and returned as `readme_assessment`.
+| ST URL | User's submitted project description | The classifier's `summary`; if absent, repository metadata description; otherwise empty |
+
+The current `aurora_api.main()` response does not set a `project_description` property. Consequently, the Aurora route normally assesses the submitted description alone.
+
+The ST URL path fetches repository metadata, topics, and README text. `fetch_repo_text()` gives the user's submitted description priority over the repository's metadata description, then passes that description and repository content to `summarize_for_sdg()`. That summarizer can call Groq when configured, or return a fallback made from the name, description, topics, and failure reason. The resulting summary is passed to `assess_relevance` as `readme_text`. The submitted description can therefore appear both as the first argument and inside the second argument's summary.
 
 ## 4. Text cleaning and early length check
 
